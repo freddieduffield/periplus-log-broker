@@ -35,7 +35,7 @@ public class Message {
         return value;
     }
 
-    public void setValue(Byte[] value) {
+    public void setValue(byte[] value) {
         this.value = value;
     }
 
