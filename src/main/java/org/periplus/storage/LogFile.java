@@ -5,28 +5,35 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Objects;
 
 public class LogFile {
     private final FileChannel channel;
 
     public LogFile(Path path) throws IOException {
-        this.channel = FileChannel.open(path,
+        Path channelPath = Objects.requireNonNull(path, "Channel path cannot be null");
+        this.channel = FileChannel.open(channelPath,
                 StandardOpenOption.CREATE,
-                StandardOpenOption.APPEND,
                 StandardOpenOption.WRITE,
-                StandardOpenOption.SYNC);
+                StandardOpenOption.READ,
+                StandardOpenOption.SYNC
+        );
     }
 
     public synchronized void append(byte[] message) throws IOException {
         ByteBuffer buffer = ByteBuffer.wrap(message);
-        channel.write(buffer);
+        channel.write(buffer, channel.size());
     }
 
     public byte[] readBytesAtPosition(int offset, int length) throws IOException {
-    // offset indicates line
+        // offset indicates line
         ByteBuffer buffer = ByteBuffer.allocate(length);
         channel.read(buffer, offset);
         buffer.flip();
         return buffer.array();
+    }
+
+    public long getCurrentFileSize() throws IOException {
+        return channel.size();
     }
 }
