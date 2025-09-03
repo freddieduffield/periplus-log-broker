@@ -3,15 +3,18 @@ package org.periplus.storage;
 import org.periplus.network.serialization.BinaryMessageSerializer;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LogSegment {
     private final Path segmentDirectory;
     private final long baseOffset;
-    private long nextOffset;
     private final LogFile logFile;
     private final OffsetIndex offsetIndex;
+    private long nextOffset;
 
     public LogSegment(Path partitionDir, long baseOffset) throws IOException {
         this.baseOffset = baseOffset;
@@ -48,20 +51,34 @@ public class LogSegment {
         return new OffsetEntry(assignedOffset, currentPosition);
     }
 
-    public byte[] readFrom(long startOffset, long maxCount) {
+    public ReadResult readFrom(long startOffset, long maxCount) throws IOException {
         BinaryMessageSerializer serializer = new BinaryMessageSerializer();
+        List<Message> messages = new ArrayList<>();
 //          Read messages sequentially, tracking current offset
+        OffsetEntry currentOffsetEntry = offsetIndex.findPositionForOffset(startOffset);
+        long currentFilePosition = currentOffsetEntry.filePosition();
+        long currentLogicalOffset = currentOffsetEntry.logicalOffset();
 
-            long currentOffset = offsetIndex.findPositionForOffset(startOffset);
-            while (currentOffset < maxCount) {
-                if (currentOffset >= startOffset) {
-                    byte[] messageBytes = logFile.readBytesAtPosition(startOffset, )
-                    Message message = serializer.deserialize(messageBytes);
-                }
-                currentOffset++;
+        while (messages.size() < maxCount && currentLogicalOffset < nextOffset) {
+//          Skip messages until you reach start_offset
+            byte[] messageLengthBytes = logFile.readBytesAtPosition(currentFilePosition, 4);
 
+            if (messageLengthBytes.length < 1) {
+                break;
             }
-//          Skip messxages until you reach start_offset
+
+            int messageLength = ByteBuffer.wrap(messageLengthBytes).getInt();
+            currentFilePosition += 4;
+            byte[] messageBytes = logFile.readBytesAtPosition(currentFilePosition, messageLength);
+            currentFilePosition += messageLength;
+
+            if (currentLogicalOffset >= startOffset) {
 //          Collect messages until you hit max_count or end of segment
+                messages.add(serializer.deserialize(messageBytes));
+            }
+            currentLogicalOffset++;
+        }
+
+        return new ReadResult(messages);
     }
 }

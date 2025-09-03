@@ -27,8 +27,11 @@ public class LogFile {
         }
     }
 
-    public byte[] readBytesAtPosition(int offset, int length) throws IOException {
+    public byte[] readBytesAtPosition(long offset, int length) throws IOException {
         // offset indicates line
+        if (channel.size() - channel.position() < length) {
+            return new byte[0];
+        }
         ByteBuffer buffer = ByteBuffer.allocate(length);
         channel.read(buffer, offset);
         buffer.flip();

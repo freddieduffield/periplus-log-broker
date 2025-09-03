@@ -24,19 +24,19 @@ public class OffsetIndex {
         entries.add(new OffsetEntry(offset, position));
     }
 
-    public long findPositionForOffset(long targetOffset) {
+    public OffsetEntry findPositionForOffset(long targetOffset) {
         //  finding starting points for sequential reads, not exact lookups - floor search
         int index = Collections.binarySearch(entries, new OffsetEntry(targetOffset, 0));
         if (index >= 0) {
-            return entries.get(index).filePosition();
+            return entries.get(index);
         }
 
         int insertionPoint = -index - 1;
         if (insertionPoint > 0) {
-            return entries.get(insertionPoint - 1).filePosition();
+            return entries.get(insertionPoint - 1);
         }
 
-        return -1;
+        return null;
     }
 
     public void saveToDisk() throws IOException {
