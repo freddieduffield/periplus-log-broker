@@ -24,8 +24,8 @@ public class BinaryMessageSerializer implements MessageSerializer {
                 dos.writeInt(0);
             }
 
-            dos.writeInt(message.getValue().length);
-            dos.write(message.getValue());
+            dos.writeInt(message.getValue().length());
+            dos.write(message.getValue().getBytes());
 
             dos.writeInt(message.getHeaders().size());
             for (Map.Entry<String, String> header : message.getHeaders().entrySet()) {
@@ -69,16 +69,17 @@ public class BinaryMessageSerializer implements MessageSerializer {
             int valueLength = dis.readInt();
             byte[] value = new byte[valueLength];
             dis.readFully(value);
+            String valueString = new String(value, StandardCharsets.UTF_8);
 
             int headerCount = dis.readInt();
             Map<String, String> headers = new HashMap<>();
-            for(int i = 0; i < headerCount; i++) {
+            for (int i = 0; i < headerCount; i++) {
                 String headerKey = readString(dis);
                 String headerValue = readString(dis);
                 headers.put(headerKey, headerValue);
             }
 
-            return new Message(timestamp, key, value, headers);
+            return new Message(timestamp, key, valueString, headers);
 
 
         } catch (IOException e) {

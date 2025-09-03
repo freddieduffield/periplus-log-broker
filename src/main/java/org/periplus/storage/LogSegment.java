@@ -54,13 +54,13 @@ public class LogSegment {
     public ReadResult readFrom(long startOffset, long maxCount) throws IOException {
         BinaryMessageSerializer serializer = new BinaryMessageSerializer();
         List<Message> messages = new ArrayList<>();
-//          Read messages sequentially, tracking current offset
+        // Read messages sequentially, tracking current offset
         OffsetEntry currentOffsetEntry = offsetIndex.findPositionForOffset(startOffset);
         long currentFilePosition = currentOffsetEntry.filePosition();
         long currentLogicalOffset = currentOffsetEntry.logicalOffset();
 
         while (messages.size() < maxCount && currentLogicalOffset < nextOffset) {
-//          Skip messages until you reach start_offset
+            // Skip messages until you reach start_offset
             byte[] messageLengthBytes = logFile.readBytesAtPosition(currentFilePosition, 4);
 
             if (messageLengthBytes.length < 1) {
@@ -72,8 +72,8 @@ public class LogSegment {
             byte[] messageBytes = logFile.readBytesAtPosition(currentFilePosition, messageLength);
             currentFilePosition += messageLength;
 
+            // Collect messages until you hit max_count or end of segment
             if (currentLogicalOffset >= startOffset) {
-//          Collect messages until you hit max_count or end of segment
                 messages.add(serializer.deserialize(messageBytes));
             }
             currentLogicalOffset++;

@@ -6,23 +6,24 @@ import java.util.Map;
 public class Message {
     private long timestamp;
     private String key;
-    private byte[] value;
+    private String value;
     private Map<String, String> headers;
 
-    public Message(long timestamp, String key, byte[] value, Map<String, String> headers) {
+    public Message(long timestamp, String key, String value, Map<String, String> headers) {
         this.timestamp = timestamp;
         this.key = key;
         this.value = value;
         this.headers = headers;
     }
 
-    public static Message create(String key, byte[] value, Map<String, String> headers) {
+    public static Message create(String key, String value, Map<String, String> headers) {
         return new Message(Instant.now().toEpochMilli(), key, value, headers);
     }
 
-    public static Message create(Instant timestamp, String key, byte[] value, Map<String, String> headers) {
+    public static Message create(Instant timestamp, String key, String value, Map<String, String> headers) {
         return new Message(timestamp.toEpochMilli(), key, value, headers);
     }
+
     public long getTimestamp() {
         return timestamp;
     }
@@ -39,11 +40,11 @@ public class Message {
         this.key = key;
     }
 
-    public byte[] getValue() {
+    public String getValue() {
         return value;
     }
 
-    public void setValue(byte[] value) {
+    public void setValue(String value) {
         this.value = value;
     }
 

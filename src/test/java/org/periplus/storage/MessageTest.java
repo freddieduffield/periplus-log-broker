@@ -6,7 +6,6 @@ import org.periplus.network.serialization.MessageSerializer;
 
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MessageTest {
@@ -15,7 +14,7 @@ public class MessageTest {
         Message originalMessage = new Message(
                 1755632474,
                 "wassup",
-                "Hello, world".getBytes(),
+                "Hello, world",
                 Map.of("content-type", "binary")
         );
 
@@ -26,12 +25,12 @@ public class MessageTest {
         assertEquals(deserializedMessage.getTimestamp(), originalMessage.getTimestamp());
         assertEquals(deserializedMessage.getHeaders(), originalMessage.getHeaders());
         assertEquals(deserializedMessage.getKey(), originalMessage.getKey());
-        assertArrayEquals(deserializedMessage.getValue(), originalMessage.getValue());
+        assertEquals(deserializedMessage.getValue(), originalMessage.getValue());
     }
 
     @Test
     public void testNullKeyHandling() {
-        Message message = new Message(123L, null, "data".getBytes(), Map.of());
+        Message message = new Message(123L, null, "data", Map.of());
         MessageSerializer serializer = new BinaryMessageSerializer();
         byte[] serialized = serializer.serialize(message);
         Message deserialized = serializer.deserialize(serialized);
