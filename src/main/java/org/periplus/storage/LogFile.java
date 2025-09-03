@@ -22,7 +22,9 @@ public class LogFile {
 
     public synchronized void append(byte[] message) throws IOException {
         ByteBuffer buffer = ByteBuffer.wrap(message);
-        channel.write(buffer, channel.size());
+        while (buffer.hasRemaining()) {
+            channel.write(buffer, channel.size());
+        }
     }
 
     public byte[] readBytesAtPosition(int offset, int length) throws IOException {
@@ -35,5 +37,8 @@ public class LogFile {
 
     public long getCurrentFileSize() throws IOException {
         return channel.size();
+    }
+    public long getCurrentPosition() throws IOException {
+        return channel.position();
     }
 }

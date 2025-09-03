@@ -1,5 +1,6 @@
 package org.periplus.storage;
 
+import java.time.Instant;
 import java.util.Map;
 
 public class Message {
@@ -15,6 +16,13 @@ public class Message {
         this.headers = headers;
     }
 
+    public static Message create(String key, byte[] value, Map<String, String> headers) {
+        return new Message(Instant.now().toEpochMilli(), key, value, headers);
+    }
+
+    public static Message create(Instant timestamp, String key, byte[] value, Map<String, String> headers) {
+        return new Message(timestamp.toEpochMilli(), key, value, headers);
+    }
     public long getTimestamp() {
         return timestamp;
     }
