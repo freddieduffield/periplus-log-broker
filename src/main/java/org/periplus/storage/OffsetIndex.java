@@ -12,15 +12,22 @@ import java.util.List;
 import java.util.Optional;
 
 public class OffsetIndex {
-    private final List<OffsetEntry> entries = new ArrayList<OffsetEntry>();
+    private final List<OffsetEntry> entries;
     private final Path indexToFilePath;
+    private final int maxEntries;
 
-    public OffsetIndex(Path indexToFilePath) throws IOException {
+    public OffsetIndex(Path indexToFilePath, int maxEntries) throws IOException {
+        this.maxEntries = maxEntries;
         this.indexToFilePath = indexToFilePath;
+        this.entries = new ArrayList<OffsetEntry>(maxEntries);
+
         loadFromDisk();
     }
 
     public void addEntry(long offset, long position) {
+        if (entries.size() >= maxEntries) {
+            throw new IllegalStateException("Index is full");
+        }
         entries.add(new OffsetEntry(offset, position));
     }
 
@@ -44,8 +51,8 @@ public class OffsetIndex {
                 StandardOpenOption.CREATE,
                 StandardOpenOption.WRITE,
                 StandardOpenOption.TRUNCATE_EXISTING)) {
-            var buffer  = ByteBuffer.allocateDirect(entries.size() * 16);
-            for (var entry: entries) {
+            var buffer = ByteBuffer.allocateDirect(entries.size() * 16);
+            for (var entry : entries) {
                 buffer.putLong(entry.logicalOffset());
                 buffer.putLong(entry.filePosition());
             }
@@ -67,7 +74,7 @@ public class OffsetIndex {
             channel.read(buffer);
             buffer.flip();
 
-            while(buffer.hasRemaining()) {
+            while (buffer.hasRemaining()) {
                 long logicalOffset = buffer.getLong();
                 long filePosition = buffer.getLong();
                 entries.add(new OffsetEntry(logicalOffset, filePosition));
@@ -79,5 +86,9 @@ public class OffsetIndex {
         return entries.isEmpty() ?
                 Optional.empty()
                 : Optional.of(entries.get(entries.size() - 1).logicalOffset());
+    }
+
+    public List<OffsetEntry> getEntries() {
+        return entries;
     }
 }

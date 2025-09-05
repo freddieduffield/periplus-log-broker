@@ -12,13 +12,17 @@ import java.util.List;
 public class LogSegment {
     private final Path segmentDirectory;
     private final long baseOffset;
+    private final int maxIndexEntries;
+    private final long maxSegmentSizeBytes;
     private final LogFile logFile;
     private final OffsetIndex offsetIndex;
     private long nextOffset;
 
-    public LogSegment(Path partitionDir, long baseOffset) throws IOException {
+    public LogSegment(Path partitionDir, long baseOffset, int maxIndexEntries, long maxSegmentSizeBytes) throws IOException {
         this.baseOffset = baseOffset;
         this.nextOffset = baseOffset;
+        this.maxSegmentSizeBytes = maxSegmentSizeBytes;
+        this.maxIndexEntries = maxIndexEntries;
 
         this.segmentDirectory = partitionDir.resolve("segment-" +
                 String.format("%016d", baseOffset));
@@ -28,7 +32,7 @@ public class LogSegment {
         Path indexFilePath = segmentDirectory.resolve("index");
 
         this.logFile = new LogFile(logFilePath);
-        this.offsetIndex = new OffsetIndex(indexFilePath);
+        this.offsetIndex = new OffsetIndex(indexFilePath, maxIndexEntries);
 
         if (offsetIndex.getLastOffset().isPresent()) {
             this.nextOffset = offsetIndex.getLastOffset().get() + 1;
@@ -80,5 +84,10 @@ public class LogSegment {
         }
 
         return new ReadResult(messages);
+    }
+
+    public boolean isFull() throws IOException {
+        return logFile.getCurrentFileSize() >= maxSegmentSizeBytes ||
+                offsetIndex.getEntries().size() >= maxIndexEntries;
     }
 }

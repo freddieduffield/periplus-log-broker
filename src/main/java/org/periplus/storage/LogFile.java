@@ -41,7 +41,9 @@ public class LogFile {
     public long getCurrentFileSize() throws IOException {
         return channel.size();
     }
+
     public long getCurrentPosition() throws IOException {
         return channel.position();
     }
+
 }
