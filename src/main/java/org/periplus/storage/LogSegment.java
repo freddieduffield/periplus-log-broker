@@ -1,5 +1,6 @@
 package org.periplus.storage;
 
+import org.periplus.config.BrokerConfig;
 import org.periplus.network.serialization.BinaryMessageSerializer;
 
 import java.io.IOException;
@@ -12,17 +13,15 @@ import java.util.List;
 public class LogSegment {
     private final Path segmentDirectory;
     private final long baseOffset;
-    private final int maxIndexEntries;
-    private final long maxSegmentSizeBytes;
     private final LogFile logFile;
     private final OffsetIndex offsetIndex;
     private long nextOffset;
+    private final BrokerConfig config;
 
-    public LogSegment(Path partitionDir, long baseOffset, int maxIndexEntries, long maxSegmentSizeBytes) throws IOException {
+    public LogSegment(Path partitionDir, long baseOffset, BrokerConfig config) throws IOException {
+        this.config = config;
         this.baseOffset = baseOffset;
         this.nextOffset = baseOffset;
-        this.maxSegmentSizeBytes = maxSegmentSizeBytes;
-        this.maxIndexEntries = maxIndexEntries;
 
         this.segmentDirectory = partitionDir.resolve("segment-" +
                 String.format("%016d", baseOffset));
@@ -32,7 +31,7 @@ public class LogSegment {
         Path indexFilePath = segmentDirectory.resolve("index");
 
         this.logFile = new LogFile(logFilePath);
-        this.offsetIndex = new OffsetIndex(indexFilePath, maxIndexEntries);
+        this.offsetIndex = new OffsetIndex(indexFilePath, config.maxIndexEntries());
 
         if (offsetIndex.getLastOffset().isPresent()) {
             this.nextOffset = offsetIndex.getLastOffset().get() + 1;
@@ -56,10 +55,17 @@ public class LogSegment {
     }
 
     public ReadResult readFrom(long startOffset, long maxCount) throws IOException {
+        if (startOffset < baseOffset) {
+            throw new IllegalArgumentException("startOffset " + startOffset + " is before baseOffset " + baseOffset);
+        }
+
         BinaryMessageSerializer serializer = new BinaryMessageSerializer();
         List<Message> messages = new ArrayList<>();
         // Read messages sequentially, tracking current offset
         OffsetEntry currentOffsetEntry = offsetIndex.findPositionForOffset(startOffset);
+        if (currentOffsetEntry == null) {
+            return new ReadResult(messages);
+        }
         long currentFilePosition = currentOffsetEntry.filePosition();
         long currentLogicalOffset = currentOffsetEntry.logicalOffset();
 
@@ -87,7 +93,7 @@ public class LogSegment {
     }
 
     public boolean isFull() throws IOException {
-        return logFile.getCurrentFileSize() >= maxSegmentSizeBytes ||
-                offsetIndex.getEntries().size() >= maxIndexEntries;
+        return logFile.getCurrentFileSize() >= config.segmentSizeBytes() ||
+                offsetIndex.getEntries().size() >= config.maxIndexEntries();
     }
 }

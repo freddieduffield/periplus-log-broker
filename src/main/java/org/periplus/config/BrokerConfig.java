@@ -1,6 +1,8 @@
 package org.periplus.config;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Properties;
 
 public class BrokerConfig {
@@ -86,6 +88,20 @@ public class BrokerConfig {
 
         public Builder maxIndexEntries(int maxIndexEntries) {
             this.maxIndexEntries = maxIndexEntries;
+            return this;
+        }
+        public Builder dataDirectory(String dataDirectory) {
+            this.dataDirectory = dataDirectory;
+            return this;
+        }
+
+        public Builder brokerId(int brokerId) {
+            this.brokerId = brokerId;
+            return this;
+        }
+
+        public Builder listenAddress(String listenAddress) {
+            this.listenAddress = listenAddress;
             return this;
         }
 

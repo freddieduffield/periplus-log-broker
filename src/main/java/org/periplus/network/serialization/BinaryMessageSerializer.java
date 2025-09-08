@@ -50,12 +50,6 @@ public class BinaryMessageSerializer implements MessageSerializer {
         ByteArrayInputStream bais = new ByteArrayInputStream(data);
         DataInputStream dis = new DataInputStream(bais);
         try {
-            int totalLength = dis.readInt();
-
-            if (totalLength != data.length - 4) {
-                throw new SerializationException("Invalid message length");
-            }
-
             long timestamp = dis.readLong();
 
             int keyLength = dis.readInt();
